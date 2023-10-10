@@ -16,11 +16,12 @@
 
         // Input: represents all lines that came from Left (L) or Right (R) branches - the rest is assumed to be from base
         var MOCK_LINES_BRANCH_MAP = {
-            7: 'L',
-            9: 'R',
-            12: 'R',
-            27: 'R',
-            30: 'L'
+            14: 'L',
+            17: 'L',
+            20: 'R',
+            21: 'R',
+            31: 'R',
+            34: 'L'
         }
 
         class Assignment {
@@ -43,6 +44,10 @@
             getLocation () {
                 return this.location
             }
+
+            setBranch (branch) {
+                this.branch = branch
+            }
         }
 
         class Interference {
@@ -64,9 +69,69 @@
             }
         }
 
+        class FunctionCall {
+            constructor (functionID, name, location, branch = undefined) {
+                this.functionID = functionID
+                this.name = name
+                this.branch = branch
+                this.location = location
+            }
+
+            getIdentifier () {
+                return `${this.functionID}_${this.name}`
+            }
+
+            getBranch () {
+                return this.branch
+            }
+
+            getLocation () {
+                return this.location
+            }
+
+            getTrace () {
+                return `${this.getLocation} in ${this.name}`
+            }
+
+            setBranch (branch) {
+                this.branch = branch
+            }
+        }
+
         class OverrideAssignmentController {
             constructor () {
                 this.branchAssignmentSets = {}
+                this.functionCallStack = [] // In the format [{FUNCTION: BRANCH}]
+            }
+
+            addFunctionToStack (func) {
+                this.functionCallStack.push(func)
+            }
+
+            removeFunctionFromStack (func) {
+                this.functionCallStack.pop()
+            }
+
+            getBranchFromStack () {
+                if (this.functionCallStack.length) {
+                    return this.functionCallStack.at(-1).getBranch()
+                }
+                return undefined
+            }
+
+            functionHandler (func, isBeforeInvoke) {
+                if ((this.functionCallStack.length || func.getBranch()) && isBeforeInvoke) {
+                    if (!func.getBranch()) func.setBranch(this.functionCallStack[-1].getBranch())
+                    this.addFunctionToStack(func)
+                } else if (!isBeforeInvoke) {
+                    this.removeFunctionFromStack(func)
+                }
+            }
+
+            updateAssignBranchBasedOnFunctionStack (assignment) {
+                if (!assignment.getBranch()) {
+                    assignment.setBranch(this.getBranchFromStack())
+                }
             }
 
             assignmentExistsOnOtherBranch (assignment) {
@@ -83,6 +148,7 @@
             }
 
             handler (assignment) {
+                this.updateAssignBranchBasedOnFunctionStack(assignment)
                 var currentBranch = assignment.getBranch()
                 if (currentBranch) {
                     var interference = this.assignmentExistsOnOtherBranch(assignment)
@@ -141,11 +207,17 @@
         var mergeController = new MergeController()
 
         this.invokeFunPre = function (iid, f, base, args, isConstructor, isMethod, functionIid, functionSid) {
-            // console.log('invokeFunPre')
+            var location = J$.iidToLocation(J$.sid, iid)
+            var line = getSourceFileCorrespondingLine(location)
+            var branch = mergeController.mapLineToBranch(line)
+            overrideAssignmentController.functionHandler(new FunctionCall(functionIid, f.name, location, branch), true)
         };
 
         this.invokeFun = function (iid, f, base, args, result, isConstructor, isMethod, functionIid, functionSid) {
-            // console.log('invokeFun')
+            var location = J$.iidToLocation(J$.sid, iid)
+            var line = getSourceFileCorrespondingLine(location)
+            var branch = mergeController.mapLineToBranch(line)
+            overrideAssignmentController.functionHandler(new FunctionCall(functionIid, f.name, location, branch), false)
         };
 
         this.putFieldPre = function (iid, base, offset, val, isComputed, isOpAssign) {
