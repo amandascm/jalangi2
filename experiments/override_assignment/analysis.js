@@ -112,16 +112,20 @@
                 this.functionCallStack.pop()
             }
 
-            getBranchFromStack () {
+            getBranchFromFunctionStack () {
                 if (this.functionCallStack.length) {
                     return this.functionCallStack.at(-1).getBranch()
                 }
                 return undefined
             }
 
+            isFunctionStackEmpty () {
+                return this.functionCallStack.length === 0
+            }
+
             functionHandler (func, isBeforeInvoke) {
-                if ((this.functionCallStack.length || func.getBranch()) && isBeforeInvoke) {
-                    if (!func.getBranch()) func.setBranch(this.functionCallStack[-1].getBranch())
+                if ((!this.isFunctionStackEmpty() || func.getBranch()) && isBeforeInvoke) {
+                    if (!func.getBranch()) func.setBranch(this.getBranchFromFunctionStack())
                     this.addFunctionToStack(func)
                 } else if (!isBeforeInvoke) {
                     this.removeFunctionFromStack(func)
@@ -130,7 +134,7 @@
 
             updateAssignBranchBasedOnFunctionStack (assignment) {
                 if (!assignment.getBranch()) {
-                    assignment.setBranch(this.getBranchFromStack())
+                    assignment.setBranch(this.getBranchFromFunctionStack())
                 }
             }
 
