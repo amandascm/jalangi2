@@ -17,8 +17,8 @@
         // Input: represents all lines that came from Left (L) or Right (R) branches - the rest is assumed to be from base
         var MOCK_LINES_BRANCH_MAP = {
             14: 'L',
-            17: 'L',
-            20: 'R',
+            18: 'L',
+            // 20: 'R',
             21: 'R',
             31: 'R',
             34: 'L'

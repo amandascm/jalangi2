@@ -1,5 +1,5 @@
 function func1 () {
-  b = 1
+//   b = 1
 }
   
 function foo() {
@@ -13,10 +13,10 @@ function bar() {
 var a
 a = { fieldA1: 2 } // left
 
+
 var b
 b = 0 // left
 foo()
-
 func1(); // right, atribuição pra B aqui dentro
 b = 1 // right
 
