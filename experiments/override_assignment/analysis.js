@@ -135,7 +135,6 @@
             }
 
             assignmentExistsOnOtherBranch (assignment) {
-                // console.log('assignmentExistsOnOtherBranch')
                 var assignmentIdentifier = assignment.getLHSIdentifier()
                 var currentBranch = assignment.getBranch()
 
