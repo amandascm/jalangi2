@@ -25,12 +25,12 @@
         }
 
         class Assignment {
-            constructor (frameOrObjectID, nameOrField, location, branch = undefined, isObject = false) {
+            constructor (frameOrObjectID, nameOrField, line, branch = undefined, isObject = false) {
                 this.frameOrObjectID = frameOrObjectID
                 this.nameOrField = nameOrField
                 this.isObject = isObject
                 this.branch = branch
-                this.location = location
+                this.line = line
             }
 
             getLHSIdentifier () {
@@ -41,8 +41,8 @@
                 return this.branch
             }
 
-            getLocation () {
-                return this.location
+            getLine () {
+                return this.line
             }
 
             setBranch (branch) {
@@ -65,16 +65,17 @@
             }
 
             log () {
-                console.log(`----Override assignment detected on ${this.previousAssignment.getLHSIdentifier()}: branch ${this.previousAssignment.getBranch()} at line ${this.previousAssignment.getLocation()}, branch ${this.currentAssignment.getBranch()} at line ${this.currentAssignment.getLocation()}----`)
+                console.log(`----Override assignment detected on ${this.previousAssignment.getLHSIdentifier()}: branch ${this.previousAssignment.getBranch()} at line ${this.previousAssignment.getLine()}, branch ${this.currentAssignment.getBranch()} at line ${this.currentAssignment.getLine()}----`)
             }
         }
 
         class FunctionCall {
-            constructor (functionID, name, location, branch = undefined) {
+            constructor (functionID, name, location, beforeInvoke, branch = undefined) {
                 this.functionID = functionID
                 this.name = name
                 this.branch = branch
                 this.location = location
+                this.beforeInvoke = beforeInvoke
             }
 
             getIdentifier () {
@@ -95,6 +96,10 @@
 
             setBranch (branch) {
                 this.branch = branch
+            }
+
+            isBeforeInvoke () {
+                return this.beforeInvoke
             }
         }
 
@@ -123,11 +128,11 @@
                 return this.functionCallStack.length === 0
             }
 
-            functionHandler (func, isBeforeInvoke) {
-                if ((!this.isFunctionStackEmpty() || func.getBranch()) && isBeforeInvoke) {
+            functionHandler (func) {
+                if ((!this.isFunctionStackEmpty() || func.getBranch()) && func.isBeforeInvoke()) {
                     if (!func.getBranch()) func.setBranch(this.getBranchFromFunctionStack())
                     this.addFunctionToStack(func)
-                } else if (!isBeforeInvoke) {
+                } else if (!func.isBeforeInvoke()) {
                     this.removeFunctionFromStack(func)
                 }
             }
@@ -192,7 +197,6 @@
             }
 
             mapLineToBranch(sourceFileLine) {
-                // console.log('mapLineToBranch')
                 var branch = MOCK_LINES_BRANCH_MAP[sourceFileLine]
                 if (branch) return branch
                 else return undefined
@@ -201,7 +205,6 @@
         }
 
         function getSourceFileCorrespondingLine (location) {
-            // console.log('getSourceFileCorrespondingLine')
             // location in the format: file_path.js:15:25:15:28
             return Number(location.split(':')[1])
         }
@@ -213,14 +216,14 @@
             var location = J$.iidToLocation(J$.sid, iid)
             var line = getSourceFileCorrespondingLine(location)
             var branch = mergeController.mapLineToBranch(line)
-            overrideAssignmentController.functionHandler(new FunctionCall(functionIid, f.name, location, branch), true)
+            overrideAssignmentController.functionHandler(new FunctionCall(functionIid, f.name, location, true, branch))
         };
 
         this.invokeFun = function (iid, f, base, args, result, isConstructor, isMethod, functionIid, functionSid) {
             var location = J$.iidToLocation(J$.sid, iid)
             var line = getSourceFileCorrespondingLine(location)
             var branch = mergeController.mapLineToBranch(line)
-            overrideAssignmentController.functionHandler(new FunctionCall(functionIid, f.name, location, branch), false)
+            overrideAssignmentController.functionHandler(new FunctionCall(functionIid, f.name, location, false, branch))
         };
 
         this.putFieldPre = function (iid, base, offset, val, isComputed, isOpAssign) {
