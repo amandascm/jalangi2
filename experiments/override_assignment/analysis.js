@@ -7,6 +7,7 @@
  */
 
 (function (sandbox) {
+    var path = require('node:path')
 
     if (sandbox.Constants.isBrowser) {
         sandbox.Results = {};
@@ -14,15 +15,10 @@
 
     function MyAnalysis() {
 
+        var TEST_CASE = J$.initParams.testCase
+
         // Input: represents all lines that came from Left (L) or Right (R) branches - the rest is assumed to be from base
-        var MOCK_LINES_BRANCH_MAP = {
-            14: 'L',
-            18: 'L',
-            // 20: 'R',
-            21: 'R',
-            31: 'R',
-            34: 'L'
-        }
+        var LINE_TO_BRANCH_MAP = require(path.join(__dirname, 'test_cases', `${TEST_CASE}`, 'line_to_branch_map.json'))
 
         class Assignment {
             constructor (frameOrObjectID, nameOrField, line, branch = undefined, isObject = false) {
@@ -192,12 +188,12 @@
         }
 
         class MergeController {            
-            constructor (linesBranchMap = MOCK_LINES_BRANCH_MAP) {
+            constructor (linesBranchMap = LINE_TO_BRANCH_MAP) {
                 this.linesBranchMap = linesBranchMap
             }
 
             mapLineToBranch(sourceFileLine) {
-                var branch = MOCK_LINES_BRANCH_MAP[sourceFileLine]
+                var branch = LINE_TO_BRANCH_MAP[sourceFileLine]
                 if (branch) return branch
                 else return undefined
             }
