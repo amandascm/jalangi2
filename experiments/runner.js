@@ -83,8 +83,8 @@ const getAnalysisTestCasesUnities = (conflictAnalysis) => {
 }
 
 const runAnalysisUnit = analysisUnit => {
-  console.log(` - Running test case: ${analysisUnit.testCase}...`)
   exec(analysisUnit.command, (error, stdout, stderr) => {
+    console.log(` - Test case: ${analysisUnit.testCase}`)
     if (error) {
       console.error(`    Error: ${error}`)
       return
