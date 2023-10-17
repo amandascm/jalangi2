@@ -212,6 +212,46 @@
             var location = J$.iidToLocation(J$.sid, iid)
             var line = getSourceFileCorrespondingLine(location)
             var branch = mergeController.mapLineToBranch(line)
+
+            if (isMethod) {
+                const actualObjectId = sandbox.smemory.getIDFromShadowObjectOrFrame(sandbox.smemory.getShadowObject(base, false).owner)
+                if (f == Array.prototype.push) {
+                    const affectedLength = Object.keys(args).length
+                    const affectedMinIdx = base.length
+                    const offsets = Array.from({ length: affectedLength}, (_, index) => index + affectedMinIdx)
+
+                    for (let offset of offsets) {
+                        const assignment = new Assignment(actualObjectId, offset, line, branch)
+                        overrideAssignmentController.handler(assignment)
+                    }
+                }
+                if (f == Array.prototype.pop) { // removes
+                    const offset = (base.length - 1)
+                    const assignment = new Assignment(actualObjectId, offset, line, branch)
+                    overrideAssignmentController.handler(assignment)
+                }
+                if (f == Array.prototype.unshift) {
+                    const affectedLength = Object.keys(args).length + base.length
+                    const affectedMinIdx = 0
+                    const offsets = Array.from({ length: affectedLength}, (_, index) => index + affectedMinIdx)
+
+                    for (let offset of offsets) {
+                        const assignment = new Assignment(actualObjectId, offset, line, branch)
+                        overrideAssignmentController.handler(assignment)
+                    }
+                }
+                if (f == Array.prototype.shift) { // removes
+                    const affectedLength = base.length
+                    const affectedMinIdx = 0
+                    const offsets = Array.from({ length: affectedLength}, (_, index) => index + affectedMinIdx)
+
+                    for (let offset of offsets) {
+                        const assignment = new Assignment(actualObjectId, offset, line, branch)
+                        overrideAssignmentController.handler(assignment)
+                    }
+                }
+            }
+
             overrideAssignmentController.functionHandler(new FunctionCall(functionIid, f.name, location, true, branch))
         };
 
