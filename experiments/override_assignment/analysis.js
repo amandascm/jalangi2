@@ -250,6 +250,33 @@
                         overrideAssignmentController.handler(assignment)
                     }
                 }
+                if (f == Array.prototype.splice) { // removes
+                    const elementsToAdd = (Object.keys(args).length - 2) ?? 0
+                    const elementsToRemove = (typeof args[1] == "number") ? args[1] : 0
+                    const affectedMinIdx = args[0]
+                    const affectedLength = (elementsToAdd - elementsToRemove) > 0 // consider the biggest array
+                        ? base.length - (affectedMinIdx) + (elementsToAdd - elementsToRemove) 
+                        : elementsToAdd === elementsToRemove && elementsToRemove !== 0 // Added as much as removed in the same positions, doesn't affect other positions
+                            ? elementsToAdd
+                            : base.length - (affectedMinIdx)
+                    const offsets = Array.from({ length: affectedLength}, (_, index) => index + affectedMinIdx)
+                    // console.log(affectedMinIdx, affectedLength, offsets, base)
+
+                    for (let offset of offsets) {
+                        const assignment = new Assignment(actualObjectId, offset, line, branch)
+                        overrideAssignmentController.handler(assignment)
+                    }
+                }
+                if (f == Array.prototype.fill) {
+                    const affectedMinIdx = args[1] ?? 0
+                    const affectedLength = (args[2] ?? base.length) - affectedMinIdx
+                    const offsets = Array.from({ length: affectedLength}, (_, index) => index + affectedMinIdx)
+
+                    for (let offset of offsets) {
+                        const assignment = new Assignment(actualObjectId, offset, line, branch)
+                        overrideAssignmentController.handler(assignment)
+                    }
+                }
             }
 
             overrideAssignmentController.functionHandler(new FunctionCall(functionIid, f.name, location, true, branch))
