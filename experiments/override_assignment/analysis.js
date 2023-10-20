@@ -8,6 +8,7 @@
 
 (function (sandbox) {
     const path = require('node:path')
+    const utils = require(path.join(__dirname,'utils.js'))
 
     if (sandbox.Constants.isBrowser) {
         sandbox.Results = {};
@@ -198,17 +199,12 @@
     
         }
 
-        function getSourceFileCorrespondingLine (location) {
-            // location in the format: file_path.js:15:25:15:28
-            return Number(location.split(':')[1])
-        }
-
         const overrideAssignmentController = new OverrideAssignmentController()
         const mergeController = new MergeController()
 
         this.invokeFunPre = function (iid, f, base, args, isConstructor, isMethod, functionIid, functionSid) {
             const location = J$.iidToLocation(J$.sid, iid)
-            const line = getSourceFileCorrespondingLine(location)
+            const line = utils.getSourceFileCorrespondingLine(location)
             const branch = mergeController.mapLineToBranch(line)
 
             if (isMethod) {
@@ -317,7 +313,7 @@
 
         this.invokeFun = function (iid, f, base, args, result, isConstructor, isMethod, functionIid, functionSid) {
             const location = J$.iidToLocation(J$.sid, iid)
-            const line = getSourceFileCorrespondingLine(location)
+            const line = utils.getSourceFileCorrespondingLine(location)
             const branch = mergeController.mapLineToBranch(line)
             overrideAssignmentController.functionHandler(new FunctionCall(functionIid, f.name, location, false, branch))
         };
@@ -325,7 +321,7 @@
         this.putFieldPre = function (iid, base, offset, val, isComputed, isOpAssign) {
             const actualObjectId = sandbox.smemory.getIDFromShadowObjectOrFrame(sandbox.smemory.getShadowObject(base, offset, false).owner)
             const location = J$.iidToLocation(J$.sid, iid)
-            const line = getSourceFileCorrespondingLine(location)
+            const line = utils.getSourceFileCorrespondingLine(location)
             const branch = mergeController.mapLineToBranch(line)
 
             const assignment = new Assignment(actualObjectId, offset, line, branch)
@@ -335,7 +331,7 @@
         this.write = function (iid, name, val, lhs, isGlobal, isScriptLocal) {
             const frameId = sandbox.smemory.getIDFromShadowObjectOrFrame(sandbox.smemory.getShadowFrame(name))
             const location = J$.iidToLocation(J$.sid, iid)
-            const line = getSourceFileCorrespondingLine(location)
+            const line = utils.getSourceFileCorrespondingLine(location)
             const branch = mergeController.mapLineToBranch(line)
 
             const assignment = new Assignment(frameId, name, line, branch)
@@ -358,7 +354,7 @@
 }(J$));
 
 /*
- node src/js/commands/jalangi.js --inlineIID --inlineSource --analysis src/js/sample_analyses/ChainedAnalyses.js --analysis src/js/runtime/SMemory.js --analysis experiments/override_assignment/analysis.js experiments/override_assignment/test_cases/example.js
+ node src/js/commands/jalangi.js --inlineIID --inlineSource --initParam testCase:example --analysis src/js/sample_analyses/ChainedAnalyses.js --analysis src/js/runtime/SMemory.js --analysis experiments/override_assignment/analysis.js experiments/override_assignment/test_cases/example/index.js
  node src/js/commands/jalangi.js --inlineIID --inlineSource --analysis src/js/sample_analyses/ChainedAnalyses.js --analysis src/js/runtime/SMemory.js --analysis src/js/sample_analyses/pldi16/LogLoadStore.js tests/pldi16/CountObjectsPerAllocationSiteTest.js
  node src/js/commands/esnstrument_cli.js --inlineIID --inlineSource --analysis src/js/sample_analyses/ChainedAnalyses.js --analysis src/js/runtime/SMemory.js --analysis src/js/sample_analyses/pldi16/LogLoadStore.js --out /tmp/pldi16/CountObjectsPerAllocationSiteTest.html  tests/pldi16/CountObjectsPerAllocationSiteTest.html
  node src/js/commands/esnstrument_cli.js --inlineIID --inlineSource --analysis src/js/sample_analyses/ChainedAnalyses.js --analysis src/js/runtime/SMemory.js --analysis src/js/sample_analyses/pldi16/LogLoadStore.js --out /tmp/pldi16/CountObjectsPerAllocationSiteTest.js  tests/pldi16/CountObjectsPerAllocationSiteTest.js
