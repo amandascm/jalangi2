@@ -260,7 +260,6 @@
                             ? elementsToAdd
                             : base.length - (affectedMinIdx)
                     const offsets = Array.from({ length: affectedLength}, (_, index) => index + affectedMinIdx)
-                    // console.log(affectedMinIdx, affectedLength, offsets, base)
 
                     for (let offset of offsets) {
                         const assignment = new Assignment(actualObjectId, offset, line, branch)
@@ -271,6 +270,42 @@
                     const affectedMinIdx = args[1] ?? 0
                     const affectedLength = (args[2] ?? base.length) - affectedMinIdx
                     const offsets = Array.from({ length: affectedLength}, (_, index) => index + affectedMinIdx)
+
+                    for (let offset of offsets) {
+                        const assignment = new Assignment(actualObjectId, offset, line, branch)
+                        overrideAssignmentController.handler(assignment)
+                    }
+                }
+                if (f == Array.prototype.copyWithin) {
+                    const affectedMinIdx = args[0] // target
+                    const start = args[1] ?? 0 // start
+                    const end = args[2] ?? base.length // end
+                    const affectedLength = end -  start - affectedMinIdx
+                    const offsets = Array.from({ length: affectedLength}, (_, index) => index + affectedMinIdx)
+                    // console.log(affectedMinIdx, affectedLength, offsets, base)
+
+                    for (let offset of offsets) {
+                        const assignment = new Assignment(actualObjectId, offset, line, branch)
+                        overrideAssignmentController.handler(assignment)
+                    }
+                }
+                if (f == Array.prototype.reverse) {
+                    const affectedMinIdx = 0
+                    const affectedLength = base.length
+                    const offsets = Array.from({ length: affectedLength}, (_, index) => index + affectedMinIdx)
+                    offsets.splice(base.length / 2, base.length % 2 === 0 ? 0 : 1)
+
+                    for (let offset of offsets) {
+                        const assignment = new Assignment(actualObjectId, offset, line, branch)
+                        overrideAssignmentController.handler(assignment)
+                    }
+                }
+                if (f == Array.prototype.sort) {
+                    const affectedMinIdx = 0
+                    const affectedLength = base.length
+                    const offsets = Array.from({ length: affectedLength}, (_, index) => index + affectedMinIdx)
+                    const sortedArray = base.sort(args[0] ?? undefined)
+                    offsets.filter((offset) => base[offset] !== sortedArray[offset])
 
                     for (let offset of offsets) {
                         const assignment = new Assignment(actualObjectId, offset, line, branch)
