@@ -7,7 +7,7 @@
  */
 
 (function (sandbox) {
-    var path = require('node:path')
+    const path = require('node:path')
 
     if (sandbox.Constants.isBrowser) {
         sandbox.Results = {};
@@ -15,10 +15,10 @@
 
     function MyAnalysis() {
 
-        var TEST_CASE = J$.initParams.testCase
+        const TEST_CASE = J$.initParams.testCase
 
         // Input: represents all lines that came from Left (L) or Right (R) branches - the rest is assumed to be from base
-        var LINE_TO_BRANCH_MAP = require(path.join(__dirname, 'test_cases', `${TEST_CASE}`, 'line_to_branch_map.json'))
+        const LINE_TO_BRANCH_MAP = require(path.join(__dirname, 'test_cases', `${TEST_CASE}`, 'line_to_branch_map.json'))
 
         class Assignment {
             constructor (frameOrObjectID, nameOrField, line, branch = undefined, isObject = false) {
@@ -140,10 +140,10 @@
             }
 
             assignmentExistsOnOtherBranch (assignment) {
-                var assignmentIdentifier = assignment.getLHSIdentifier()
-                var currentBranch = assignment.getBranch()
+                const assignmentIdentifier = assignment.getLHSIdentifier()
+                const currentBranch = assignment.getBranch()
 
-                for (var branch of Object.keys(this.branchAssignmentSets)) {
+                for (let branch of Object.keys(this.branchAssignmentSets)) {
                     if (branch !== currentBranch && this.branchAssignmentSets[branch][assignmentIdentifier]){
                         return new Interference(this.branchAssignmentSets[branch][assignmentIdentifier], assignment)
                     }
@@ -153,12 +153,12 @@
 
             handler (assignment) {
                 this.updateAssignBranchBasedOnFunctionStack(assignment)
-                var currentBranch = assignment.getBranch()
+                const currentBranch = assignment.getBranch()
                 if (currentBranch) {
-                    var interference = this.assignmentExistsOnOtherBranch(assignment)
+                    const interference = this.assignmentExistsOnOtherBranch(assignment)
                     interference?.log()
     
-                    var assignmentIdentifier = assignment.getLHSIdentifier()
+                    const assignmentIdentifier = assignment.getLHSIdentifier()
                     if (!this.branchAssignmentSets[currentBranch]) {
                         this.branchAssignmentSets[currentBranch] = {};
                     }
@@ -168,7 +168,7 @@
             }
 
             removeAssignmentFromBranch (assignment, branch) {
-                var assignmentIdentifier = assignment.getLHSIdentifier()
+                const assignmentIdentifier = assignment.getLHSIdentifier()
 
                 if (this.branchAssignmentSets[branch][assignmentIdentifier]) {
                     delete this.branchAssignmentSets[branch][assignmentIdentifier]
@@ -177,9 +177,9 @@
     
             removeAssignmentFromOtherBranches (assignment) {
                 // console.log(`remove ${assignmentIdentifier}`)
-                var currentBranch = assignment.getBranch()
-                var assignmentOnBaseBranch = currentBranch === undefined
-                for (var branch of Object.keys(this.branchAssignmentSets)) {
+                const currentBranch = assignment.getBranch()
+                const assignmentOnBaseBranch = currentBranch === undefined
+                for (let branch of Object.keys(this.branchAssignmentSets)) {
                     if (assignmentOnBaseBranch || (!assignmentOnBaseBranch && branch !== currentBranch)) {
                         this.removeAssignmentFromBranch(assignment, branch)
                     }
@@ -193,9 +193,7 @@
             }
 
             mapLineToBranch(sourceFileLine) {
-                var branch = LINE_TO_BRANCH_MAP[sourceFileLine]
-                if (branch) return branch
-                else return undefined
+                return LINE_TO_BRANCH_MAP[sourceFileLine] ?? undefined
             }
     
         }
@@ -205,13 +203,13 @@
             return Number(location.split(':')[1])
         }
 
-        var overrideAssignmentController = new OverrideAssignmentController()
-        var mergeController = new MergeController()
+        const overrideAssignmentController = new OverrideAssignmentController()
+        const mergeController = new MergeController()
 
         this.invokeFunPre = function (iid, f, base, args, isConstructor, isMethod, functionIid, functionSid) {
-            var location = J$.iidToLocation(J$.sid, iid)
-            var line = getSourceFileCorrespondingLine(location)
-            var branch = mergeController.mapLineToBranch(line)
+            const location = J$.iidToLocation(J$.sid, iid)
+            const line = getSourceFileCorrespondingLine(location)
+            const branch = mergeController.mapLineToBranch(line)
 
             if (isMethod) {
                 const actualObjectId = sandbox.smemory.getIDFromShadowObjectOrFrame(sandbox.smemory.getShadowObject(base, false).owner)
@@ -318,29 +316,29 @@
         };
 
         this.invokeFun = function (iid, f, base, args, result, isConstructor, isMethod, functionIid, functionSid) {
-            var location = J$.iidToLocation(J$.sid, iid)
-            var line = getSourceFileCorrespondingLine(location)
-            var branch = mergeController.mapLineToBranch(line)
+            const location = J$.iidToLocation(J$.sid, iid)
+            const line = getSourceFileCorrespondingLine(location)
+            const branch = mergeController.mapLineToBranch(line)
             overrideAssignmentController.functionHandler(new FunctionCall(functionIid, f.name, location, false, branch))
         };
 
         this.putFieldPre = function (iid, base, offset, val, isComputed, isOpAssign) {
-            var actualObjectId = sandbox.smemory.getIDFromShadowObjectOrFrame(sandbox.smemory.getShadowObject(base, offset, false).owner)
-            var location = J$.iidToLocation(J$.sid, iid)
-            var line = getSourceFileCorrespondingLine(location)
-            var branch = mergeController.mapLineToBranch(line)
+            const actualObjectId = sandbox.smemory.getIDFromShadowObjectOrFrame(sandbox.smemory.getShadowObject(base, offset, false).owner)
+            const location = J$.iidToLocation(J$.sid, iid)
+            const line = getSourceFileCorrespondingLine(location)
+            const branch = mergeController.mapLineToBranch(line)
 
-            var assignment = new Assignment(actualObjectId, offset, line, branch)
+            const assignment = new Assignment(actualObjectId, offset, line, branch)
             overrideAssignmentController.handler(assignment)
         };
 
         this.write = function (iid, name, val, lhs, isGlobal, isScriptLocal) {
-            var frameId = sandbox.smemory.getIDFromShadowObjectOrFrame(sandbox.smemory.getShadowFrame(name))
-            var location = J$.iidToLocation(J$.sid, iid)
-            var line = getSourceFileCorrespondingLine(location)
-            var branch = mergeController.mapLineToBranch(line)
+            const frameId = sandbox.smemory.getIDFromShadowObjectOrFrame(sandbox.smemory.getShadowFrame(name))
+            const location = J$.iidToLocation(J$.sid, iid)
+            const line = getSourceFileCorrespondingLine(location)
+            const branch = mergeController.mapLineToBranch(line)
 
-            var assignment = new Assignment(frameId, name, line, branch)
+            const assignment = new Assignment(frameId, name, line, branch)
             overrideAssignmentController.handler(assignment)
 
             return {result: val}
@@ -348,7 +346,7 @@
 
         this.endExecution = function () {
             if (sandbox.Results) {
-                for (var i = 0; i < logs.length; i++) {
+                for (let i = 0; i < logs.length; i++) {
                     sandbox.log(logs[i]);
                 }
             }
